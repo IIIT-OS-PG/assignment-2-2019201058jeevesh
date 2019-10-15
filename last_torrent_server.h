@@ -18,7 +18,8 @@
 #include <netinet/in.h>
 #include<sstream>
 using namespace std;
-#define  tracker_port 7878
+//#define  tracker_port 8000
+int tracker_port;
 
 
 

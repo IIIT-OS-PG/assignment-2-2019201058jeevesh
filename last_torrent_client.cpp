@@ -19,23 +19,134 @@ using namespace std;
 
 
 
-// struct upload_file_arg
-// {
-// string file_path;
-// string port;
-// string file_size;
-// };
+void *thread_function_for_verify(void *arguments_of_thread)
+{
+  struct tracker * tr=(struct tracker*)arguments_of_thread;
+  string client_user_name=tr->username;
+  string password=tr->password;
+  int port_to_send=tr->port;
+
+  int socket_id=socket(AF_INET, SOCK_STREAM, 0);
+      if(socket_id<0)
+      cout<<"Error in connection"<<endl;
+      struct sockaddr_in serveraddr;
+      bzero((char *) &serveraddr, sizeof(serveraddr));
 
 
-// struct tracker
-// {
-//   char username[20];
-//   char password[20];
-//   int port;
-  
-// };
+           port_to_send=tracker_port;
+        serveraddr.sin_family=AF_INET;
+          serveraddr.sin_port=htons(port_to_send);
+          serveraddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+          int connection_id= connect(socket_id,(struct sockaddr *)&serveraddr,sizeof(serveraddr));
+            if(connection_id < 0)
+            perror("ERROR connecting");
 
 
+
+              
+        string create_user="login";
+    //string download_file="download_file";
+    int create_user_len=strlen(create_user.c_str());
+    char create[create_user_len];
+    strcpy(create,create_user.c_str());
+
+    int send_status;
+    
+    
+    send_status=send(socket_id,&create_user_len,sizeof(create_user_len),0);
+    if(send_status<0)
+        {
+                cout<<"error while send status";
+                 exit(0);
+        }
+    send_status=send(socket_id,&create,sizeof(create),0);
+    if(send_status<0)
+        {
+                 cout<<"error while send status";
+                 exit(0);
+        }
+        //cout<<"send:"<<create<<endl;
+
+
+
+        int client_user_name_len=strlen(client_user_name.c_str());
+    char client_user[client_user_name_len];
+    strcpy(client_user,client_user_name.c_str());
+
+
+    //i
+    int count=0;
+
+  send_status=send(socket_id,&client_user_name_len,sizeof(client_user_name_len),0);
+    if(send_status<0)
+        {
+                cout<<"error while send status";
+                 exit(0);
+        }
+    else ++count;
+    send_status=send(socket_id,&client_user,sizeof(client_user),0);
+    if(send_status<0)
+        {
+                 cout<<"error while send status";
+                 exit(0);
+        }
+    else ++count;
+        //cout<<"send:"<<client_user<<endl;
+
+    //
+
+    //send password
+
+
+        int password_len=strlen(password.c_str());
+    char pass[password_len];
+    strcpy(pass,password.c_str());
+
+
+  send_status=send(socket_id,&password_len,sizeof(password_len),0);
+    if(send_status<0)
+        {
+                cout<<"error while send status";
+                 exit(0);
+        }
+     else ++count;
+    send_status=send(socket_id,&pass,sizeof(pass),0);
+    if(send_status<0)
+        {
+                 cout<<"error while send status";
+                 exit(0);
+        }
+    else ++count;
+
+    if(count == 4)
+    {
+      int return_value;
+      int recv_status;
+      recv_status=recv(socket_id,&return_value,sizeof(return_value),0);
+        if(recv_status<0)
+        {
+            cout<<"error in recv signal " << errno << " " << EBADF << " " << ECONNREFUSED << " " << EFAULT << " " << EINVAL << " " << ENOMEM << " "<< ENOTCONN;
+            exit(0);
+        }  
+
+        if(return_value == count)
+        {
+          cout<<endl<<"User name has been verified"<<endl;
+        }
+        else
+        {
+          cout<<endl<<"PASSWORD IS WRONG,GO BACK ,COMPILE AGAIN"<<endl;
+        }
+
+
+
+
+    } 
+
+
+
+
+}
 
 void *thread_function_for_upload(void *arguments_of_thread)
 {
@@ -159,7 +270,7 @@ void *thread_function_for_tracker(void *arguments_of_thread)
       bzero((char *) &serveraddr, sizeof(serveraddr));
 
 
-          int port_to_send=tracker_port;
+           port_to_send=tracker_port;
         serveraddr.sin_family=AF_INET;
           serveraddr.sin_port=htons(port_to_send);
           serveraddr.sin_addr.s_addr=inet_addr("127.0.0.1");
@@ -266,11 +377,7 @@ void *thread_function_for_tracker(void *arguments_of_thread)
 
     }        
 
-    
-
-
   
-
 
 }
 
@@ -362,24 +469,7 @@ void *thread_function_for_each(void * arguments_to_connect)
     pthread_exit(NULL);
 
 
-
-
-
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -389,6 +479,8 @@ int main(int argc, char *argv[])
     string ip_client=string(argv[1]);//need correction here argument 1 provided by user
     pthread_t threadserver;
 
+    //string trackerport=argv[2];
+    tracker_port=atoi(argv[2]);
     pthread_create(&threadserver, 0, serverfunction, (void *)&ip_client);
 
   while(1)
@@ -402,6 +494,7 @@ int main(int argc, char *argv[])
     string download_file="download_file";
     string create_user="create_user";
     string upload_file="upload_file";
+    string login="login";
 
     if(strcmp(client_first_word.c_str(),download_file.c_str())==0)
     {
@@ -582,16 +675,6 @@ cout<<"recv:"<<stringportlength<<endl;
         cout<<"no of chunks"<<number_of_chunks<<endl;
 
 
-
-
-       // 
-      //function copied from here  
-        
-        
-        // string chunk_number;
-        // ss >> chunk_number;
-        // string ip_of_source;
-        // ss >> ip_of_source;
         
       for(int chunk_num=0;chunk_num<=number_of_chunks;chunk_num++)
       {
@@ -600,11 +683,7 @@ cout<<"recv:"<<stringportlength<<endl;
 
       if(chunk_num == 0 )
     {
-        // FILE *fp=fopen(filepath.c_str(),"rb");
-        // fseek(fp,0,SEEK_END);
-        // int file_size=ftell(fp);
-        // rewind(fp);
-        // fclose(fp);
+        
         port_index=0;
         int port_to_send=different_port[port_index];
         cout<<"port_to:"<<port_to_send<<endl;
@@ -679,94 +758,6 @@ cout<<"recv:"<<stringportlength<<endl;
       
       }
       
-      
-      
-      
-      
-      
-        
-        // string chunk_number;
-        // ss >> chunk_number;
-        // string ip_of_source;
-        // ss >> ip_of_source;
-        
-        
-        
-        
-        //function_for_each_chunk(file_path,dest_path,chunk_number,ip_of_source);
-
-       // int chunk_num=atoi(chunk_number.c_str());
-       // cout<<"chunk_num:"<<chunk_num<<" "<<endl<<"chunk_number:"<<chunk_number<<endl;
-
-      //  // cout<<"file_path:"<<file_path<<endl;
-
-      //   string s=ip_of_source;
-      //   string ip_source;
-      //   string port_source;
-
-      //   char ch=':';
-      //   int i=0;
-
-      //   while(s[i] != ch)
-      //   {
-      //       ip_source=ip_source+s[i];
-
-      //       ++i;
-      //   }
-      //   ip_source[i+1]='\0';
-      //   ++i;
-
-
-
-      //   while( i < ip_of_source.size() )
-      //   {
-      //       port_source=port_source+s[i];
-      //       ++i;
-      //   }
-      //   port_source[i+1]='\0';
-
-    // if(chunk_num == 0 )
-    // {
-    //     FILE *fp=fopen(filepath.c_str(),"rb");
-    //     fseek(fp,0,SEEK_END);
-    //     int file_size=ftell(fp);
-    //     rewind(fp);
-    //     fclose(fp);
-
-
-
-    //      fp=fopen(dest_path.c_str(),"wb");//changed file name here
-    //     fseek(fp,file_size-1,SEEK_SET);
-    //     fputc('\0',fp);
-    //     rewind(fp);
-    //     fclose(fp);
-    // }
-    //cout<<endl<<"pkb: "<<file_size<<endl;
-      //rewind(fp);
-
-
-
-      //fseek(fp,file_size-1,SEEK_SET);
-      //fputc('\0',fp);
-      //fclose(fp);
-
-
-
-        // pthread_t  thread_for_chunk;
-        // struct thread_properties *thread_pointer  =(struct thread_properties *)malloc(sizeof(thread_properties));
-        // thread_pointer->chunk_number=chunk_num;
-        // strcpy(thread_pointer->ip,ip_source.c_str());
-        // strcpy(thread_pointer->source_path,filepath.c_str());
-        // strcpy(thread_pointer->dest_path,dest_path.c_str());
-        // thread_pointer->port_number=atoi(port_source.c_str());
-        // if(int thread_status=pthread_create(&thread_for_chunk,0,thread_function_for_each,(void *)thread_pointer))
-        //     {
-        //       cout<<endl<<"error in creating thread"<<endl;
-        //       pthread_exit(NULL);
-        //     }
-        // pthread_detach(thread_for_chunk);
-
-
     }
     else if(strcmp(client_first_word.c_str(),create_user.c_str())==0)
     {
@@ -775,10 +766,6 @@ cout<<"recv:"<<stringportlength<<endl;
         ss >> client_user_name;
         ss >> password;
         int port_number_of_tracker=tracker_port;
-
-
-    //
-
 
 
         struct tracker *tr=(struct tracker*)malloc(sizeof(tracker));
@@ -792,184 +779,16 @@ cout<<"recv:"<<stringportlength<<endl;
               pthread_exit(NULL);
             }
         pthread_detach(thread_for_tracker);
-
-
-
-
-
-
-
-
-/*
-    ///*
-
-      int socket_id=socket(AF_INET, SOCK_STREAM, 0);
-      if(socket_id<0)
-      cout<<"Error in connection"<<endl;
-      struct sockaddr_in serveraddr;
-      bzero((char *) &serveraddr, sizeof(serveraddr));
-
-
-          int port_to_send=tracker_port;
-        serveraddr.sin_family=AF_INET;
-          serveraddr.sin_port=htons(port_to_send);
-          serveraddr.sin_addr.s_addr=inet_addr("127.0.0.1");
-          int connection_id= connect(socket_id,(struct sockaddr *)&serveraddr,sizeof(serveraddr));
-            if(connection_id < 0)
-            perror("ERROR connecting");
-
-    //
         
-        
-        //string create_user="create_user";
-    //string download_file="download_file";
-    int create_user_len=strlen(create_user.c_str());
-    char create[create_user_len];
-    strcpy(create,create_user.c_str());
-
-    int send_status;
-    
-    
-    send_status=send(socket_id,&create_user_len,sizeof(create_user_len),0);
-    if(send_status<0)
-        {
-                cout<<"error while send status";
-                 exit(0);
-        }
-    send_status=send(socket_id,&create,sizeof(create),0);
-    if(send_status<0)
-        {
-                 cout<<"error while send status";
-                 exit(0);
-        }
-        //cout<<"send:"<<create<<endl;
-
-
-
-        int client_user_name_len=strlen(client_user_name.c_str());
-    char client_user[client_user_name_len];
-    strcpy(client_user,client_user_name.c_str());
-
-
-    //i
-    int count=0;
-
-  send_status=send(socket_id,&client_user_name_len,sizeof(client_user_name_len),0);
-    if(send_status<0)
-        {
-                cout<<"error while send status";
-                 exit(0);
-        }
-    else ++count;
-    send_status=send(socket_id,&client_user,sizeof(client_user),0);
-    if(send_status<0)
-        {
-                 cout<<"error while send status";
-                 exit(0);
-        }
-    else ++count;
-        //cout<<"send:"<<client_user<<endl;
-
-    //
-
-    //send password
-
-
-        int password_len=strlen(password.c_str());
-    char pass[password_len];
-    strcpy(pass,password.c_str());
-
-
-  send_status=send(socket_id,&password_len,sizeof(password_len),0);
-    if(send_status<0)
-        {
-                cout<<"error while send status";
-                 exit(0);
-        }
-     else ++count;
-    send_status=send(socket_id,&pass,sizeof(pass),0);
-    if(send_status<0)
-        {
-                 cout<<"error while send status";
-                 exit(0);
-        }
-    else ++count;
-
-    if(count == 4)
-    {
-      int return_value;
-      int recv_status;
-      recv_status=recv(socket_id,&return_value,sizeof(return_value),0);
-        if(recv_status<0)
-        {
-            cout<<"error in recv signal " << errno << " " << EBADF << " " << ECONNREFUSED << " " << EFAULT << " " << EINVAL << " " << ENOMEM << " "<< ENOTCONN;
-            exit(0);
-        }  
-
-        if(return_value == count)
-        {
-          cout<<"user and password data uploaded successfully"<<endl;
-        }
-
-
-
-
-
-    }        
-        
-        */
-        
-        
-        
-        //
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /*struct tracker *tr=(struct tracker*)malloc(sizeof(tracker));
-        strcpy(tr->password,password.c_str());
-        strcpy(tr->username,client_user_name.c_str());
-        tr->port=port_number_of_tracker;
-        pthread_t thread_for_tracker;
-        if(int thread_status=pthread_create(&thread_for_tracker,0,thread_function_for_tracker,(void *)tr))
-            {
-              cout<<endl<<"error in creating thread"<<endl;
-              pthread_exit(NULL);
-            }
-        pthread_detach(thread_for_tracker);*/
 
     }
     else if(strcmp(client_first_word.c_str(),upload_file.c_str())==0)
     {
 
 
-
-
-
-
       string file_path;
       ss >> file_path;
     string file_name=file_path;
-    //   int len=file_path.size();
-    // cout<<endl<<len;
-    // int index;
-    // for(int i=len-1;i>=0;i--)
-    // {
-    //     if(file_path[i]=='/')
-    //     {
-    //         index=i;
-    //         break;
-    //     }
-    // }
-    // string file_name=file_path.substr(index+1,(len-(index+1)));
 
 
     cout<<endl<<file_name<<endl;
@@ -997,40 +816,36 @@ cout<<"recv:"<<stringportlength<<endl;
             cout<<"thread status:"<<thread_status<<endl;
             
     pthread_detach(thread_for_upload);
+      
 
+    }
+    if(strcmp(client_first_word.c_str(),login.c_str())==0)
+    {
+      string client_user_name;
+        string password;
+        ss >> client_user_name;
+        ss >> password;
+        int port_number_of_tracker=tracker_port;
 
-
-
-
-
-
-
-
-
-
-
-      /*
-      struct upload_file_arg *up=(struct upload_file_arg *)malloc(sizeof(upload_file_arg));
-      up->file_path=file_path;
-      FILE *fp=fopen(file_path.c_str(),"rb");
-      fseek(fp,0,SEEK_END);
-      int file_size=ftell(fp);
-      rewind(fp);
-      fclose(fp);
-
-      string file_size_str=to_string(file_size);
-      up->file_size=file_size;
-      pthread_t thread_for_upload;*/
-    /*  if(int thread_status=pthread_create(&thread_for_upload,0,thread_function_for_upload,(void *)up))
+        struct tracker *tr=(struct tracker*)malloc(sizeof(tracker));
+        strcpy(tr->password,password.c_str());
+        strcpy(tr->username,client_user_name.c_str());
+        tr->port=port_number_of_tracker;
+        pthread_t thread_for_tracker;
+        if(int thread_status=pthread_create(&thread_for_tracker,0,thread_function_for_verify,(void *)tr))
             {
               cout<<endl<<"error in creating thread"<<endl;
               pthread_exit(NULL);
             }
-        pthread_detach(thread_for_upload);
-*/
-      
+        pthread_detach(thread_for_tracker);
+
+
+
+
+
 
     }
+    else cout<<"NOT MATCHING ANY COMMAND"<<endl;
 
 
 

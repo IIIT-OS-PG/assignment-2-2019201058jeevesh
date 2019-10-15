@@ -124,6 +124,7 @@ cout<<"listen status:"<<listen_status<<endl;
      string upload_file="upload_file";
      string download_file="download_file";
      string create_user="create_user";
+     string login="login";
      
      
      
@@ -328,7 +329,7 @@ cout<<"listen status:"<<listen_status<<endl;
         else ++count;
          
          
-        printf("\n %d\n",username_len);
+       // printf("\n %d\n",username_len);
 
         
         char username[username_len+1];
@@ -340,7 +341,7 @@ cout<<"listen status:"<<listen_status<<endl;
             exit(0);
         }
         else ++count;
-        printf("\n %s\n",username);
+        printf("%s\n",username);
 
         //
             int password_len;
@@ -353,7 +354,7 @@ cout<<"listen status:"<<listen_status<<endl;
         else ++count;
          
          
-        printf("\n %d\n",password_len);
+       // printf("\n %d\n",password_len);
 
         
         char password[password_len+1];
@@ -365,7 +366,7 @@ cout<<"listen status:"<<listen_status<<endl;
             exit(0);
         }
         else ++count;
-        printf("\n %s\n",password);
+        printf("%s\n",password);
 
             int send_status;
             send_status=send(new_sock,&count,sizeof(count),0);
@@ -383,6 +384,95 @@ cout<<"listen status:"<<listen_status<<endl;
         //
 
 
+     }
+     else if(strcmp(login.c_str(),com.c_str())==0)
+     {
+         //CODE FOR LOGIN
+
+         int count=0;
+         int recv_status;
+         int username_len;
+         recv_status=recv(new_sock,&username_len,sizeof(username_len),0);
+        if(recv_status<0)
+        {
+            cout<<"error in recv signal " << errno << " " << EBADF << " " << ECONNREFUSED << " " << EFAULT << " " << EINVAL << " " << ENOMEM << " "<< ENOTCONN;
+            exit(0);
+        }
+        else ++count;
+         
+         
+        //printf("\n %d\n",username_len);
+
+        
+        char username[username_len+1];
+        username[username_len]='\0';
+        recv_status=recv(new_sock,username,sizeof(username)-1,0);
+        if(recv_status<0)
+        {
+            cout<<"error in recv signal " << errno << " " << EBADF << " " << ECONNREFUSED << " " << EFAULT << " " << EINVAL << " " << ENOMEM << " "<< ENOTCONN;
+            exit(0);
+        }
+        else ++count;
+        //printf("\n %s\n",username);
+
+        //
+            int password_len;
+         recv_status=recv(new_sock,&password_len,sizeof(password_len),0);
+        if(recv_status<0)
+        {
+            cout<<"error in recv signal " << errno << " " << EBADF << " " << ECONNREFUSED << " " << EFAULT << " " << EINVAL << " " << ENOMEM << " "<< ENOTCONN;
+            exit(0);
+        }
+        else ++count;
+         
+         
+       // printf("\n %d\n",password_len);
+
+        
+        char password[password_len+1];
+        password[password_len]='\0';
+        recv_status=recv(new_sock,password,sizeof(password)-1,0);
+        if(recv_status<0)
+        {
+            cout<<"error in recv signal " << errno << " " << EBADF << " " << ECONNREFUSED << " " << EFAULT << " " << EINVAL << " " << ENOMEM << " "<< ENOTCONN;
+            exit(0);
+        }
+        else ++count;
+        //printf("\n %s\n",password);
+
+            int send_status;
+            
+
+            string user=username;
+            string ps=password;
+            if(map_username_pass.count(user))
+            {
+                string temp=map_username_pass[user];
+                if(strcmp(ps.c_str(),temp.c_str())==0)
+                {
+                    send_status=send(new_sock,&count,sizeof(count),0);
+                    if(send_status<0)
+                    {
+                            cout<<"error while send status";
+                                exit(0);
+                    }
+                }
+                else
+                {
+                    count=0;
+                    send_status=send(new_sock,&count,sizeof(count),0);
+                    if(send_status<0)
+                    {
+                            cout<<"error while send status";
+                                exit(0);
+                    }
+                }
+                          
+            }
+            //map_username_pass[user]=ps;
+            //cout<<"entries added are :"<<user<<"::"<<map_username_pass[user]<<endl;
+
+        
      }
      else cout<<"Not matching with any command:"<<endl;
 //     //{
